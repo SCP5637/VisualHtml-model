@@ -15,7 +15,7 @@
             width: 100%; 
             height: 100%; 
         }
-        #controls {
+        .controls-panel {
             position: absolute;
             top: 20px;
             left: 20px;
@@ -27,8 +27,9 @@
             cursor: move;
             user-select: none;
             transition: all 0.3s ease;
+            z-index: 100;
         }
-        #controls.collapsed {
+        .controls-panel.collapsed {
             width: 40px;
             height: 40px;
             padding: 0;
@@ -40,7 +41,7 @@
             justify-content: center;
             cursor: pointer;
         }
-        #controls.collapsed::after {
+        .controls-panel.collapsed::after {
             content: "+";
             color: white;
             font-size: 24px;
@@ -50,7 +51,7 @@
             margin-bottom: 10px;
             transition: opacity 0.3s ease;
         }
-        #controls.collapsed .control-group {
+        .controls-panel.collapsed .control-group {
             opacity: 0;
             height: 0;
             margin: 0;
@@ -72,8 +73,18 @@
             margin-top: 0;
             color: #333;
             transition: opacity 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        #controls.collapsed h2 {
+        .panel-id {
+            font-size: 0.8em;
+            background-color: #4682b4;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        .controls-panel.collapsed h2 {
             opacity: 0;
             height: 0;
             margin: 0;
@@ -85,7 +96,7 @@
             margin-top: 10px;
             transition: opacity 0.3s ease;
         }
-        #controls.collapsed .button-group {
+        .controls-panel.collapsed .button-group {
             opacity: 0;
             height: 0;
             margin: 0;
@@ -103,75 +114,261 @@
         button:hover {
             background: #45a049;
         }
-        #color-picker {
+        button.close-btn {
+            background: #f44336;
+        }
+        button.close-btn:hover {
+            background: #d32f2f;
+        }
+        button.add-btn {
+            background: #2196F3;
+        }
+        button.add-btn:hover {
+            background: #0b7dda;
+        }
+        .color-picker {
             width: 100%;
             height: 20px;
             margin-top: 5px;
             cursor: pointer;
         }
+        /* 隐藏额外的控制面板 */
+        #controls-2, #controls-3, #controls-4 {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div id="container"></div>
-    <div id="controls">
-        <h2>洛伦兹吸引子控制面板</h2>
-        
-        <style>
-            .param-input {
-                width: 60px;
-                margin-left: 8px;
-                padding: 2px 4px;
-            }
-            .value-display {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-            }
-        </style>
+    
+    <style>
+        .param-input {
+            width: 60px;
+            margin-left: 8px;
+            padding: 2px 4px;
+        }
+        .value-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    </style>
+
+    <!-- 控制面板1 -->
+    <div id="controls-1" class="controls-panel">
+        <h2>
+            洛伦兹吸引子控制面板
+            <span class="panel-id">1</span>
+        </h2>
         
         <div class="control-group">
-            <label for="sigma">普朗特数 (σ):</label>
-            <input type="range" id="sigma" min="1" max="50" step="0.1" value="10">
+            <label for="sigma-1">普朗特数 (σ):</label>
+            <input type="range" id="sigma-1" min="1" max="50" step="0.1" value="10">
             <div class="value-display">
-                当前值: <span id="sigma-value">10</span>
-                <input type="number" id="sigma-input" class="param-input" min="1" max="50" step="0.1" value="10">
+                当前值: <span id="sigma-value-1">10</span>
+                <input type="number" id="sigma-input-1" class="param-input" min="1" max="50" step="0.1" value="10">
             </div>
         </div>
         
         <div class="control-group">
-            <label for="rho">瑞丽数 (ρ):</label>
-            <input type="range" id="rho" min="0" max="100" step="0.1" value="28">
+            <label for="rho-1">瑞丽数 (ρ):</label>
+            <input type="range" id="rho-1" min="0" max="100" step="0.1" value="28">
             <div class="value-display">
-                当前值: <span id="rho-value">28</span>
-                <input type="number" id="rho-input" class="param-input" min="0" max="100" step="0.1" value="28">
+                当前值: <span id="rho-value-1">28</span>
+                <input type="number" id="rho-input-1" class="param-input" min="0" max="100" step="0.1" value="28">
             </div>
         </div>
         
         <div class="control-group">
-            <label for="beta">方向比 (β):</label>
-            <input type="range" id="beta" min="1" max="10" step="0.001" value="2.667">
+            <label for="beta-1">方向比 (β):</label>
+            <input type="range" id="beta-1" min="1" max="10" step="0.001" value="2.667">
             <div class="value-display">
-                当前值: <span id="beta-value">2.667</span>
-                <input type="number" id="beta-input" class="param-input" min="1" max="10" step="0.001" value="2.667">
+                当前值: <span id="beta-value-1">2.667</span>
+                <input type="number" id="beta-input-1" class="param-input" min="1" max="10" step="0.001" value="2.667">
             </div>
         </div>
         
         <div class="control-group">
-            <label for="speed">推演速度:</label>
-            <input type="range" id="speed" min="1" max="5" step="0.1" value="1">
-            <div class="value-display">当前值: <span id="speed-value">1</span>倍</div>
+            <label for="speed-1">推演速度:</label>
+            <input type="range" id="speed-1" min="1" max="5" step="0.1" value="1">
+            <div class="value-display">当前值: <span id="speed-value-1">1</span>倍</div>
         </div>
         
         <div class="control-group">
-            <label for="color">轨迹颜色:</label>
-            <input type="color" id="color" value="#FFBB00">
+            <label for="color-1">轨迹颜色:</label>
+            <input type="color" id="color-1" class="color-picker" value="#FFBB00">
         </div>
         
         <div class="button-group">
-            <button id="reset">重置</button>
-            <button id="reset-view">重置视角</button>
-            <button id="pause">开始</button>
-            <button id="random">随机参数</button>
+            <button id="reset-1">重置</button>
+            <button id="reset-view-1">重置视角</button>
+            <button id="pause-1">开始</button>
+            <button id="random-1">随机参数</button>
+            <button id="add-curve-1" class="add-btn">添加曲线</button>
+        </div>
+    </div>
+
+    <!-- 控制面板2 -->
+    <div id="controls-2" class="controls-panel" style="display: none; top: 80px;">
+        <h2>
+            洛伦兹吸引子控制面板
+            <span class="panel-id">2</span>
+        </h2>
+        
+        <div class="control-group">
+            <label for="sigma-2">普朗特数 (σ):</label>
+            <input type="range" id="sigma-2" min="1" max="50" step="0.1" value="10">
+            <div class="value-display">
+                当前值: <span id="sigma-value-2">10</span>
+                <input type="number" id="sigma-input-2" class="param-input" min="1" max="50" step="0.1" value="10">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="rho-2">瑞丽数 (ρ):</label>
+            <input type="range" id="rho-2" min="0" max="100" step="0.1" value="28">
+            <div class="value-display">
+                当前值: <span id="rho-value-2">28</span>
+                <input type="number" id="rho-input-2" class="param-input" min="0" max="100" step="0.1" value="28">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="beta-2">方向比 (β):</label>
+            <input type="range" id="beta-2" min="1" max="10" step="0.001" value="2.667">
+            <div class="value-display">
+                当前值: <span id="beta-value-2">2.667</span>
+                <input type="number" id="beta-input-2" class="param-input" min="1" max="10" step="0.001" value="2.667">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="speed-2">推演速度:</label>
+            <input type="range" id="speed-2" min="1" max="5" step="0.1" value="1">
+            <div class="value-display">当前值: <span id="speed-value-2">1</span>倍</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="color-2">轨迹颜色:</label>
+            <input type="color" id="color-2" class="color-picker" value="#FF3300">
+        </div>
+        
+        <div class="button-group">
+            <button id="reset-2">重置</button>
+            <button id="reset-view-2">重置视角</button>
+            <button id="pause-2">开始</button>
+            <button id="random-2">随机参数</button>
+            <button id="add-curve-2" class="add-btn">添加曲线</button>
+            <button id="close-2" class="close-btn">关闭线路</button>
+        </div>
+    </div>
+
+    <!-- 控制面板3 -->
+    <div id="controls-3" class="controls-panel" style="display: none; top: 140px;">
+        <h2>
+            洛伦兹吸引子控制面板
+            <span class="panel-id">3</span>
+        </h2>
+        
+        <div class="control-group">
+            <label for="sigma-3">普朗特数 (σ):</label>
+            <input type="range" id="sigma-3" min="1" max="50" step="0.1" value="10">
+            <div class="value-display">
+                当前值: <span id="sigma-value-3">10</span>
+                <input type="number" id="sigma-input-3" class="param-input" min="1" max="50" step="0.1" value="10">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="rho-3">瑞丽数 (ρ):</label>
+            <input type="range" id="rho-3" min="0" max="100" step="0.1" value="28">
+            <div class="value-display">
+                当前值: <span id="rho-value-3">28</span>
+                <input type="number" id="rho-input-3" class="param-input" min="0" max="100" step="0.1" value="28">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="beta-3">方向比 (β):</label>
+            <input type="range" id="beta-3" min="1" max="10" step="0.001" value="2.667">
+            <div class="value-display">
+                当前值: <span id="beta-value-3">2.667</span>
+                <input type="number" id="beta-input-3" class="param-input" min="1" max="10" step="0.001" value="2.667">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="speed-3">推演速度:</label>
+            <input type="range" id="speed-3" min="1" max="5" step="0.1" value="1">
+            <div class="value-display">当前值: <span id="speed-value-3">1</span>倍</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="color-3">轨迹颜色:</label>
+            <input type="color" id="color-3" class="color-picker" value="#33FF00">
+        </div>
+        
+        <div class="button-group">
+            <button id="reset-3">重置</button>
+            <button id="reset-view-3">重置视角</button>
+            <button id="pause-3">开始</button>
+            <button id="random-3">随机参数</button>
+            <button id="add-curve-3" class="add-btn">添加曲线</button>
+            <button id="close-3" class="close-btn">关闭线路</button>
+        </div>
+    </div>
+
+    <!-- 控制面板4 -->
+    <div id="controls-4" class="controls-panel" style="display: none; top: 200px;">
+        <h2>
+            洛伦兹吸引子控制面板
+            <span class="panel-id">4</span>
+        </h2>
+        
+        <div class="control-group">
+            <label for="sigma-4">普朗特数 (σ):</label>
+            <input type="range" id="sigma-4" min="1" max="50" step="0.1" value="10">
+            <div class="value-display">
+                当前值: <span id="sigma-value-4">10</span>
+                <input type="number" id="sigma-input-4" class="param-input" min="1" max="50" step="0.1" value="10">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="rho-4">瑞丽数 (ρ):</label>
+            <input type="range" id="rho-4" min="0" max="100" step="0.1" value="28">
+            <div class="value-display">
+                当前值: <span id="rho-value-4">28</span>
+                <input type="number" id="rho-input-4" class="param-input" min="0" max="100" step="0.1" value="28">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="beta-4">方向比 (β):</label>
+            <input type="range" id="beta-4" min="1" max="10" step="0.001" value="2.667">
+            <div class="value-display">
+                当前值: <span id="beta-value-4">2.667</span>
+                <input type="number" id="beta-input-4" class="param-input" min="1" max="10" step="0.001" value="2.667">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="speed-4">推演速度:</label>
+            <input type="range" id="speed-4" min="1" max="5" step="0.1" value="1">
+            <div class="value-display">当前值: <span id="speed-value-4">1</span>倍</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="color-4">轨迹颜色:</label>
+            <input type="color" id="color-4" class="color-picker" value="#0033FF">
+        </div>
+        
+        <div class="button-group">
+            <button id="reset-4">重置</button>
+            <button id="reset-view-4">重置视角</button>
+            <button id="pause-4">开始</button>
+            <button id="random-4">随机参数</button>
+            <button id="close-4" class="close-btn">关闭线路</button>
         </div>
     </div>
 
@@ -205,7 +402,274 @@
         document.getElementById('container').addEventListener('contextmenu', function(e) {
             e.preventDefault();
         });
+
+        // 管理多个洛伦兹系统的全局变量
+        const MAX_CURVES = 4;
+        let activeCurves = 1; // 当前活动的曲线数量
+        let lorenzSystems = []; // 存储所有洛伦兹系统实例
+        const fixedStep = 0.01; // 固定的数值积分步长
+
+        // 洛伦兹系统类
+        class LorenzSystem {
+            constructor(id, color) {
+                this.id = id;
+                this.sigma = 10;
+                this.rho = 28;
+                this.beta = 8/3;
+                this.speed = 1;
+                this.isPaused = true;
+                
+                // 状态变量
+                this.x = 0.1;
+                this.y = 0;
+                this.z = 0;
+                
+                // 时间累积器
+                this.accumulatedTime = 0;
+                this.lastTime = performance.now();
+                
+                // 创建几何体和材质
+                this.maxPoints = 5000;
+                this.pointCount = 0;
+                this.positions = new Float32Array(this.maxPoints * 3);
+                this.lineGeometry = new THREE.BufferGeometry();
+                this.lineGeometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
+                
+                this.lineMaterial = new THREE.LineBasicMaterial({
+                    color: color,
+                    linewidth: 1
+                });
+                
+                this.line = new THREE.Line(this.lineGeometry, this.lineMaterial);
+                scene.add(this.line);
+                
+                // 绑定事件处理程序
+                this.bindEvents();
+            }
+            
+            // 洛伦兹方程
+            lorenz(x, y, z) {
+                return [
+                    this.sigma * (y - x),
+                    x * (this.rho - z) - y,
+                    x * y - this.beta * z
+                ];
+            }
+            
+            // 更新系统状态
+            updateSystem(dt) {
+                const [dx, dy, dz] = this.lorenz(this.x, this.y, this.z);
+                this.x += dx * dt;
+                this.y += dy * dt;
+                this.z += dz * dt;
+                
+                if (this.pointCount < this.maxPoints) {
+                    this.positions[this.pointCount * 3] = this.x;
+                    this.positions[this.pointCount * 3 + 1] = this.y;
+                    this.positions[this.pointCount * 3 + 2] = this.z;
+                    this.pointCount++;
+                    this.lineGeometry.setDrawRange(0, this.pointCount);
+                } else {
+                    for (let i = 0; i < (this.maxPoints - 1) * 3; i++) {
+                        this.positions[i] = this.positions[i + 3];
+                    }
+                    this.positions[(this.maxPoints - 1) * 3] = this.x;
+                    this.positions[(this.maxPoints - 1) * 3 + 1] = this.y;
+                    this.positions[(this.maxPoints - 1) * 3 + 2] = this.z;
+                }
+                
+                this.lineGeometry.attributes.position.needsUpdate = true;
+            }
+            
+            // 更新参数
+            updateParameter(name, value) {
+                const fixedValue = parseFloat(value);
+                const slider = document.getElementById(`${name}-${this.id}`);
+                const display = document.getElementById(`${name}-value-${this.id}`);
+                const input = document.getElementById(`${name}-input-${this.id}`);
+                
+                this[name] = fixedValue;
+                
+                if (slider && display && input) {
+                    slider.value = fixedValue;
+                    display.textContent = fixedValue.toFixed(name === 'beta' ? 3 : 2);
+                    input.value = fixedValue;
+                }
+            }
+            
+            // 重置系统
+            reset() {
+                this.x = 0.1;
+                this.y = 0;
+                this.z = 0;
+                
+                this.pointCount = 0;
+                this.lineGeometry.setDrawRange(0, 0);
+                this.lineGeometry.attributes.position.needsUpdate = true;
+                
+                this.accumulatedTime = 0;
+                this.lastTime = performance.now();
+                
+                this.isPaused = true;
+                document.getElementById(`pause-${this.id}`).textContent = '开始';
+            }
+            
+            // 随机参数
+            randomize() {
+                this.updateParameter('sigma', Math.random() * 49 + 1);
+                this.updateParameter('rho', Math.random() * 100);
+                this.updateParameter('beta', Math.random() * 9 + 1);
+            }
+            
+            // 更新动画
+            animate(currentTime) {
+                if (!this.isPaused) {
+                    const deltaTime = (currentTime - this.lastTime) / 1000;
+                    this.lastTime = currentTime;
+                    
+                    this.accumulatedTime += deltaTime * this.speed;
+                    
+                    while (this.accumulatedTime >= fixedStep) {
+                        this.updateSystem(fixedStep);
+                        this.accumulatedTime -= fixedStep;
+                    }
+                }
+            }
+            
+            // 绑定事件处理程序
+            bindEvents() {
+                // 参数滑动条事件
+                document.getElementById(`sigma-${this.id}`).addEventListener('input', (e) => 
+                    this.updateParameter('sigma', e.target.value));
+                document.getElementById(`rho-${this.id}`).addEventListener('input', (e) => 
+                    this.updateParameter('rho', e.target.value));
+                document.getElementById(`beta-${this.id}`).addEventListener('input', (e) => 
+                    this.updateParameter('beta', e.target.value));
+                
+                // 参数输入框事件
+                document.getElementById(`sigma-input-${this.id}`).addEventListener('change', (e) => 
+                    this.updateParameter('sigma', e.target.value));
+                document.getElementById(`rho-input-${this.id}`).addEventListener('change', (e) => 
+                    this.updateParameter('rho', e.target.value));
+                document.getElementById(`beta-input-${this.id}`).addEventListener('change', (e) => 
+                    this.updateParameter('beta', e.target.value));
+                
+                // 速度控制
+                document.getElementById(`speed-${this.id}`).addEventListener('input', (e) => {
+                    this.speed = parseFloat(e.target.value);
+                    document.getElementById(`speed-value-${this.id}`).textContent = this.speed.toFixed(1);
+                });
+                
+                // 颜色控制
+                document.getElementById(`color-${this.id}`).addEventListener('input', (e) => {
+                    this.lineMaterial.color = new THREE.Color(e.target.value);
+                });
+                
+                // 按钮事件
+                document.getElementById(`reset-${this.id}`).addEventListener('click', () => this.reset());
+                document.getElementById(`random-${this.id}`).addEventListener('click', () => this.randomize());
+                document.getElementById(`pause-${this.id}`).addEventListener('click', (e) => {
+                    this.isPaused = !this.isPaused;
+                    if (!this.isPaused) {
+                        this.lastTime = performance.now();
+                        this.accumulatedTime = 0;
+                    }
+                    e.target.textContent = this.isPaused ? '开始' : '暂停';
+                });
+            }
+            
+            // 清理资源
+            dispose() {
+                scene.remove(this.line);
+                this.lineGeometry.dispose();
+                this.lineMaterial.dispose();
+            }
+        }
         
+        // 曲线管理功能
+        function initializeCurves() {
+            // 创建第一条曲线
+            const colors = ['#FFBB00', '#FF3300', '#33FF00', '#0033FF'];
+            lorenzSystems.push(new LorenzSystem(1, colors[0]));
+            
+            // 添加曲线按钮事件
+            for (let i = 1; i <= MAX_CURVES; i++) {
+                const addButton = document.getElementById(`add-curve-${i}`);
+                if (addButton) {
+                    addButton.addEventListener('click', () => {
+                        if (activeCurves < MAX_CURVES) {
+                            activeCurves++;
+                            const nextPanel = document.getElementById(`controls-${activeCurves}`);
+                            if (nextPanel) {
+                                nextPanel.style.display = 'block';
+                                lorenzSystems.push(new LorenzSystem(activeCurves, colors[activeCurves - 1]));
+                            }
+                        }
+                    });
+                }
+                
+                const closeButton = document.getElementById(`close-${i}`);
+                if (closeButton) {
+                    closeButton.addEventListener('click', () => {
+                        if (i <= activeCurves && i > 1) {
+                            // 移除曲线系统
+                            lorenzSystems[i - 1].dispose();
+                            lorenzSystems[i - 1] = null;
+                            lorenzSystems = lorenzSystems.filter(sys => sys !== null);
+                            
+                            // 隐藏控制面板
+                            document.getElementById(`controls-${i}`).style.display = 'none';
+                            activeCurves--;
+                        }
+                    });
+                }
+            }
+        }
+
+        // 面板拖动功能
+        function initializePanelDrag() {
+            const panels = document.querySelectorAll('.controls-panel');
+            panels.forEach(panel => {
+                let isDragging = false;
+                let offsetX, offsetY;
+
+                panel.addEventListener('mousedown', function(e) {
+                    if (e.target === panel || e.target.tagName === 'H2') {
+                        isDragging = true;
+                        offsetX = e.clientX - panel.offsetLeft;
+                        offsetY = e.clientY - panel.offsetTop;
+                        panel.style.cursor = 'grabbing';
+                    }
+                });
+
+                document.addEventListener('mousemove', function(e) {
+                    if (isDragging) {
+                        panel.style.left = (e.clientX - offsetX) + 'px';
+                        panel.style.top = (e.clientY - offsetY) + 'px';
+                    }
+                });
+
+                document.addEventListener('mouseup', function() {
+                    isDragging = false;
+                    panel.style.cursor = 'move';
+                });
+            });
+        }
+
+        // 视角重置功能
+        function initializeViewReset() {
+            for (let i = 1; i <= MAX_CURVES; i++) {
+                const resetViewButton = document.getElementById(`reset-view-${i}`);
+                if (resetViewButton) {
+                    resetViewButton.addEventListener('click', () => {
+                        camera.position.set(0, 0, 50);
+                        camera.lookAt(0, 0, 0);
+                        controls.update();
+                    });
+                }
+            }
+        }
+
         function createInfiniteAxes() {
             const axesGroup = new THREE.Group();
             
@@ -275,220 +739,27 @@
             
             return axesGroup;
         }
-        
-        scene.add(createInfiniteAxes());
-        
-        // 洛伦兹吸引子线
-        const lineGeometry = new THREE.BufferGeometry();
-        let lineMaterial = new THREE.LineBasicMaterial({
-            color: 0xFFBB00,
-            linewidth: 1
-        });
-        
-        // 初始参数
-        let sigma = 10;
-        let rho = 28;
-        let beta = 8/3;
-        let speed = 1;
-        let isPaused = true; // 初始状态为暂停，需要点击"开始"按钮才能开始模拟
-        
-        // 初始状态
-        let x = 0.1;
-        let y = 0;
-        let z = 0;
-        
-        // 存储历史点
-        const maxPoints = 5000;
-        const positions = new Float32Array(maxPoints * 3);
-        let pointCount = 0;
-        
-        lineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        const line = new THREE.Line(lineGeometry, lineMaterial);
-        scene.add(line);
-        
-        const controlsPanel = document.getElementById('controls');
-        let isDragging = false;
-        let offsetX, offsetY;
-        
-        controlsPanel.addEventListener('mousedown', function(e) {
-            if (e.target === controlsPanel || e.target.tagName === 'H2') {
-                isDragging = true;
-                offsetX = e.clientX - controlsPanel.offsetLeft;
-                offsetY = e.clientY - controlsPanel.offsetTop;
-                controlsPanel.style.cursor = 'grabbing';
-            }
-        });
-        
-        document.addEventListener('mousemove', function(e) {
-            if (isDragging) {
-                controlsPanel.style.left = (e.clientX - offsetX) + 'px';
-                controlsPanel.style.top = (e.clientY - offsetY) + 'px';
-            }
-        });
-        
-        document.addEventListener('mouseup', function() {
-            isDragging = false;
-            controlsPanel.style.cursor = 'move';
-        });
-        
-        // 参数更新函数
-        function updateParameter(name, value) {
-            const fixedValue = parseFloat(value);
-            const slider = document.getElementById(name);
-            const display = document.getElementById(`${name}-value`);
-            const input = document.getElementById(`${name}-input`);
-            
-            // 更新全局变量
-            window[name] = fixedValue;
-            
-            // 更新UI
-            slider.value = fixedValue;
-            display.textContent = fixedValue.toFixed(name === 'beta' ? 3 : 2);
-            input.value = fixedValue;
+
+        // 初始化函数
+        function init() {
+            scene.add(createInfiniteAxes());
+            initializeCurves();
+            initializePanelDrag();
+            initializeViewReset();
         }
 
-        // 滑动条事件监听
-        document.getElementById('sigma').addEventListener('input', function(e) {
-            updateParameter('sigma', e.target.value);
-        });
-        
-        document.getElementById('rho').addEventListener('input', function(e) {
-            updateParameter('rho', e.target.value);
-        });
-        
-        document.getElementById('beta').addEventListener('input', function(e) {
-            updateParameter('beta', e.target.value);
-        });
-
-        // 输入框事件监听
-        document.getElementById('sigma-input').addEventListener('change', function(e) {
-            updateParameter('sigma', e.target.value);
-        });
-        
-        document.getElementById('rho-input').addEventListener('change', function(e) {
-            updateParameter('rho', e.target.value);
-        });
-        
-        document.getElementById('beta-input').addEventListener('change', function(e) {
-            updateParameter('beta', e.target.value);
-        });
-        
-        document.getElementById('speed').addEventListener('input', function(e) {
-            speed = parseFloat(e.target.value);
-            document.getElementById('speed-value').textContent = speed.toFixed(1);
-        });
-        
-        document.getElementById('color').addEventListener('input', function(e) {
-            const color = new THREE.Color(e.target.value);
-            lineMaterial.color.copy(color);
-        });
-        
-        document.getElementById('reset').addEventListener('click', function() {
-            // 重置状态变量
-            x = 0.1;
-            y = 0;
-            z = 0;
-            
-            // 清空轨迹
-            pointCount = 0;
-            lineGeometry.setDrawRange(0, 0);
-            lineGeometry.attributes.position.needsUpdate = true;
-            
-            // 重置时间累积器
-            accumulatedTime = 0;
-            lastTime = performance.now();
-            
-            // 确保系统停止
-            isPaused = true;
-            document.getElementById('pause').textContent = '开始';  // 改为"开始"更符合逻辑
-        });
-        
-        document.getElementById('reset-view').addEventListener('click', function() {
-            camera.position.set(0, 0, 50);
-            camera.lookAt(0, 0, 0);
-            controls.update();
-        });
-        
-        document.getElementById('pause').addEventListener('click', function() {
-            isPaused = !isPaused;
-            
-            if (!isPaused) {
-                // 开始运动时重置时间累积器，避免瞬间更新
-                lastTime = performance.now();
-                accumulatedTime = 0;
-            }
-            
-            this.textContent = isPaused ? '开始' : '暂停';
-        });
-        
-        document.getElementById('random').addEventListener('click', function() {
-            // 随机生成参数，使用新的范围
-            const randomSigma = Math.random() * 49 + 1;     // 1-50
-            const randomRho = Math.random() * 100;          // 0-100
-            const randomBeta = Math.random() * 9 + 1;       // 1-10
-            
-            // 使用更新函数更新所有参数
-            updateParameter('sigma', randomSigma);
-            updateParameter('rho', randomRho);
-            updateParameter('beta', randomBeta);
-        });
-        
-        // 固定的数值积分步长
-        const fixedStep = 0.01;
-        let accumulatedTime = 0;
-        let lastTime = performance.now();
-        
-        // 洛伦兹方程（纯数学关系）
-        function lorenz(x, y, z) {
-            return [
-                sigma * (y - x),
-                x * (rho - z) - y,
-                x * y - beta * z
-            ];
-        }
-        
-        // 更新系统状态
-        function updateSystem(dt) {
-            const [dx, dy, dz] = lorenz(x, y, z);
-            x += dx * dt;
-            y += dy * dt;
-            z += dz * dt;
-            
-            if (pointCount < maxPoints) {
-                positions[pointCount * 3] = x;
-                positions[pointCount * 3 + 1] = y;
-                positions[pointCount * 3 + 2] = z;
-                pointCount++;
-                lineGeometry.setDrawRange(0, pointCount);
-            } else {
-                for (let i = 0; i < (maxPoints - 1) * 3; i++) {
-                    positions[i] = positions[i + 3];
-                }
-                positions[(maxPoints - 1) * 3] = x;
-                positions[(maxPoints - 1) * 3 + 1] = y;
-                positions[(maxPoints - 1) * 3 + 2] = z;
-            }
-            
-            lineGeometry.attributes.position.needsUpdate = true;
-        }
-        
+        // 动画循环
         function animate() {
             requestAnimationFrame(animate);
             
-            if (!isPaused) {
-                const currentTime = performance.now();
-                const deltaTime = (currentTime - lastTime) / 1000; // 转换为秒
-                lastTime = currentTime;
-                
-                // 根据speed参数累积更多的时间
-                accumulatedTime += deltaTime * speed;
-                
-                // 使用固定步长进行多次更新
-                while (accumulatedTime >= fixedStep) {
-                    updateSystem(fixedStep);
-                    accumulatedTime -= fixedStep;
+            const currentTime = performance.now();
+            
+            // 更新所有活动的洛伦兹系统
+            lorenzSystems.forEach(system => {
+                if (system) {
+                    system.animate(currentTime);
                 }
-            }
+            });
             
             controls.update();
             renderer.render(scene, camera);
@@ -500,6 +771,8 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
         
+        // 启动应用
+        init();
         animate();
     </script>
 </body>
