@@ -142,7 +142,7 @@
         
         <div class="control-group">
             <label for="color">轨迹颜色:</label>
-            <input type="color" id="color" value="#ff0000">
+            <input type="color" id="color" value="#FFBB00">
         </div>
         
         <div class="button-group">
@@ -171,6 +171,18 @@
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
+        
+        // 配置鼠标按键
+        controls.mouseButtons = {
+            LEFT: THREE.MOUSE.ROTATE,    // 左键旋转
+            MIDDLE: THREE.MOUSE.PAN,     // 中键平移
+            RIGHT: THREE.MOUSE.NONE      // 禁用右键
+        };
+        
+        // 禁用浏览器默认的右键菜单
+        document.getElementById('container').addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
         
         function createInfiniteAxes() {
             const axesGroup = new THREE.Group();
