@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D混沌摆可视化</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        canvas {
+            display: block;
+            margin: 20px auto;
+            background-color: white;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .control-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        .value-display {
+            font-size: 14px;
+            color: #666;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.secondary {
+            background-color: #3498db;
+        }
+        button.secondary:hover {
+            background-color: #2980b9;
+        }
+        button.danger {
+            background-color: #e74c3c;
+        }
+        button.danger:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>2D混沌摆可视化</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="length1">摆1长度: <span id="length1-value" class="value-display">150</span></label>
+                <input type="range" id="length1" min="50" max="300" value="150" step="1">
+            </div>
+            <div class="control-group">
+                <label for="length2">摆2长度: <span id="length2-value" class="value-display">150</span></label>
+                <input type="range" id="length2" min="50" max="300" value="150" step="1">
+            </div>
+            <div class="control-group">
+                <label for="mass1">摆1重量: <span id="mass1-value" class="value-display">10</span></label>
+                <input type="range" id="mass1" min="1" max="10" value="10" step="1">
+            </div>
+            <div class="control-group">
+                <label for="mass2">摆2重量: <span id="mass2-value" class="value-display">10</span></label>
+                <input type="range" id="mass2" min="1" max="10" value="10" step="1">
+            </div>
+            <div class="control-group">
+                <label for="speed">运行速度: <span id="speed-value" class="value-display">1</span></label>
+                <input type="range" id="speed" min="0.1" max="5" value="1" step="0.1">
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button id="toggleTrail1" class="secondary">显示摆1轨迹</button>
+            <button id="toggleTrail2" class="secondary">显示摆2轨迹</button>
+            <button id="reset" class="danger">重置系统</button>
+        </div>
+        
+        <canvas id="pendulumCanvas" width="600" height="500"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('pendulumCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const length1Slider = document.getElementById('length1');
+        const length2Slider = document.getElementById('length2');
+        const mass1Slider = document.getElementById('mass1');
+        const mass2Slider = document.getElementById('mass2');
+        const speedSlider = document.getElementById('speed');
+        const resetButton = document.getElementById('reset');
+        const toggleTrail1Button = document.getElementById('toggleTrail1');
+        const toggleTrail2Button = document.getElementById('toggleTrail2');
+        
+        const length1Value = document.getElementById('length1-value');
+        const length2Value = document.getElementById('length2-value');
+        const mass1Value = document.getElementById('mass1-value');
+        const mass2Value = document.getElementById('mass2-value');
+        const speedValue = document.getElementById('speed-value');
+        
+        // 初始参数
+        let length1 = 150;
+        let length2 = 150;
+        let mass1 = 10;
+        let mass2 = 10;
+        let speed = 1;
+        let showTrail1 = false;
+        let showTrail2 = true;
+        let isDragging = false;
+        let dragTarget = null; // 'pendulum1' 或 'pendulum2'
+        
+        // 摆的状态
+        let angle1 = Math.PI / 2;
+        let angle2 = Math.PI / 2;
+        let angle1Velocity = 0;
+        let angle2Velocity = 0;
+        
+        // 物理参数
+        const gravity = 9.81;
+        const damping = 1; // 阻尼系数,拟真一点就设置0.995
+        const timeStep = 0.05; // 修复：将timeStep改为常量
+        
+        // 轨迹点数组
+        let trail1 = [];
+        let trail2 = [];
+        const maxTrailLength = 500;
+        
+        // 更新显示的值
+        function updateDisplayValues() {
+            length1Value.textContent = length1;
+            length2Value.textContent = length2;
+            mass1Value.textContent = mass1;
+            mass2Value.textContent = mass2;
+            speedValue.textContent = speed;
+        }
+        
+        // 重置模拟
+        function resetSimulation() {
+            angle1 = Math.PI / 2;
+            angle2 = Math.PI / 2;
+            angle1Velocity = 0;
+            angle2Velocity = 0;
+            trail1 = [];
+            trail2 = [];
+        }
+        
+        // 计算摆的位置
+        function calculatePositions() {
+            const pivotX = canvas.width / 2;
+            const pivotY = 100;
+            
+            const x1 = pivotX + length1 * Math.sin(angle1);
+            const y1 = pivotY + length1 * Math.cos(angle1);
+            
+            const x2 = x1 + length2 * Math.sin(angle2);
+            const y2 = y1 + length2 * Math.cos(angle2);
+            
+            return { pivotX, pivotY, x1, y1, x2, y2 };
+        }
+        
+        // 更新物理状态
+        function updatePhysics() {
+            // 双摆的物理方程
+            const m1 = mass1; // 使用滑块设置的质量1
+            const m2 = mass2; // 使用滑块设置的质量2
+            
+            // 计算加速度
+            const num1 = -gravity * (2 * m1 + m2) * Math.sin(angle1);
+            const num2 = -m2 * gravity * Math.sin(angle1 - 2 * angle2);
+            const num3 = -2 * Math.sin(angle1 - angle2) * m2;
+            const num4 = angle2Velocity * angle2Velocity * length2 + angle1Velocity * angle1Velocity * length1 * Math.cos(angle1 - angle2);
+            const den = length1 * (2 * m1 + m2 - m2 * Math.cos(2 * angle1 - 2 * angle2));
+            
+            const angle1Acceleration = (num1 + num2 + num3 * num4) / den;
+            
+            const num5 = 2 * Math.sin(angle1 - angle2);
+            const num6 = angle1Velocity * angle1Velocity * length1 * (m1 + m2);
+            const num7 = gravity * (m1 + m2) * Math.cos(angle1);
+            const num8 = angle2Velocity * angle2Velocity * length2 * m2 * Math.cos(angle1 - angle2);
+            const den2 = length2 * (2 * m1 + m2 - m2 * Math.cos(2 * angle1 - 2 * angle2));
+            
+            const angle2Acceleration = (num5 * (num6 + num7 + num8)) / den2;
+            
+            // 更新速度和角度
+            angle1Velocity += angle1Acceleration * timeStep * speed;
+            angle2Velocity += angle2Acceleration * timeStep * speed;
+            
+            angle1Velocity *= damping;
+            angle2Velocity *= damping;
+            
+            angle1 += angle1Velocity * timeStep * speed;
+            angle2 += angle2Velocity * timeStep * speed;
+        }
+        
+        // 绘制摆
+        function drawPendulum() {
+            const { pivotX, pivotY, x1, y1, x2, y2 } = calculatePositions();
+            
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制轨迹
+            if (showTrail1 && trail1.length > 0) {
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(52, 152, 219, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.moveTo(trail1[0].x, trail1[0].y);
+                for (let i = 1; i < trail1.length; i++) {
+                    ctx.lineTo(trail1[i].x, trail1[i].y);
+                }
+                ctx.stroke();
+            }
+            
+            if (showTrail2 && trail2.length > 0) {
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(231, 76, 60, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.moveTo(trail2[0].x, trail2[0].y);
+                for (let i = 1; i < trail2.length; i++) {
+                    ctx.lineTo(trail2[i].x, trail2[i].y);
+                }
+                ctx.stroke();
+            }
+            
+            // 添加当前点到轨迹
+            trail1.push({ x: x1, y: y1 });
+            trail2.push({ x: x2, y: y2 });
+            
+            if (trail1.length > maxTrailLength) {
+                trail1.shift();
+            }
+            if (trail2.length > maxTrailLength) {
+                trail2.shift();
+            }
+            
+            // 绘制摆杆和摆球
+            ctx.beginPath();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            
+            // 第一根摆杆
+            ctx.moveTo(pivotX, pivotY);
+            ctx.lineTo(x1, y1);
+            
+            // 第二根摆杆
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            
+            // 绘制摆球
+            ctx.fillStyle = '#3498db';
+            ctx.beginPath();
+            ctx.arc(x1, y1, 10 + mass1, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(x2, y2, 10 + mass2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 绘制支点
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(pivotX, pivotY, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // 处理拖动开始
+        function handleDragStart(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const { x1, y1, x2, y2 } = calculatePositions();
+            
+            // 检查是否点击了摆1的球
+            const distance1 = Math.sqrt((x - x1) ** 2 + (y - y1) ** 2);
+            if (distance1 < 10 + mass1) {
+                isDragging = true;
+                dragTarget = 'pendulum1';
+                e.preventDefault();
+                return;
+            }
+            
+            // 检查是否点击了摆2的球
+            const distance2 = Math.sqrt((x - x2) ** 2 + (y - y2) ** 2);
+            if (distance2 < 10 + mass2) {
+                isDragging = true;
+                dragTarget = 'pendulum2';
+                e.preventDefault();
+            }
+        }
+        
+        // 处理拖动移动
+        function handleDragMove(e) {
+            if (!isDragging) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            const { pivotX, pivotY, x1, y1 } = calculatePositions();
+            
+            if (dragTarget === 'pendulum1') {
+                // 拖动摆1
+                const dx = mouseX - pivotX;
+                const dy = mouseY - pivotY;
+                angle1 = Math.atan2(dx, dy);
+                
+                // 重置速度
+                angle1Velocity = 0;
+                angle2Velocity = 0;
+            } else if (dragTarget === 'pendulum2') {
+                // 拖动摆2
+                const dx = mouseX - x1;
+                const dy = mouseY - y1;
+                angle2 = Math.atan2(dx, dy);
+                
+                // 重置速度
+                angle1Velocity = 0;
+                angle2Velocity = 0;
+            }
+        }
+        
+        function handleDragEnd() {
+            isDragging = false;
+            dragTarget = null;
+        }
+        
+        // 动画循环
+        function animate() {
+            if (!isDragging) {
+                updatePhysics();
+            }
+            drawPendulum();
+            requestAnimationFrame(animate);
+        }
+        
+        // 事件监听
+        length1Slider.addEventListener('input', function() {
+            length1 = parseInt(this.value);
+            updateDisplayValues();
+        });
+        
+        length2Slider.addEventListener('input', function() {
+            length2 = parseInt(this.value);
+            updateDisplayValues();
+        });
+        
+        mass1Slider.addEventListener('input', function() {
+            mass1 = parseInt(this.value);
+            updateDisplayValues();
+        });
+        
+        mass2Slider.addEventListener('input', function() {
+            mass2 = parseInt(this.value);
+            updateDisplayValues();
+        });
+        
+        speedSlider.addEventListener('input', function() {
+            speed = parseFloat(this.value);
+            updateDisplayValues();
+        });
+        
+        resetButton.addEventListener('click', resetSimulation);
+        
+        toggleTrail1Button.addEventListener('click', function() {
+            showTrail1 = !showTrail1;
+            this.textContent = showTrail1 ? '隐藏摆1轨迹' : '显示摆1轨迹';
+        });
+        
+        toggleTrail2Button.addEventListener('click', function() {
+            showTrail2 = !showTrail2;
+            this.textContent = showTrail2 ? '隐藏摆2轨迹' : '显示摆2轨迹';
+        });
+        
+        canvas.addEventListener('mousedown', handleDragStart);
+        canvas.addEventListener('mousemove', handleDragMove);
+        canvas.addEventListener('mouseup', handleDragEnd);
+        canvas.addEventListener('mouseleave', handleDragEnd);
+        
+        canvas.addEventListener('touchstart', function(e) {
+            handleDragStart(e.touches[0]);
+        });
+        
+        canvas.addEventListener('touchmove', function(e) {
+            handleDragMove(e.touches[0]);
+            e.preventDefault();
+        }, { passive: false });
+        
+        canvas.addEventListener('touchend', handleDragEnd);
+        
+        // 初始化
+        updateDisplayValues();
+        animate();
+    </script>
+</body>
+</html>
