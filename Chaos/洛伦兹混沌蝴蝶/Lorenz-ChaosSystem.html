@@ -116,22 +116,44 @@
     <div id="controls">
         <h2>洛伦兹吸引子控制面板</h2>
         
+        <style>
+            .param-input {
+                width: 60px;
+                margin-left: 8px;
+                padding: 2px 4px;
+            }
+            .value-display {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+        </style>
+        
         <div class="control-group">
             <label for="sigma">普朗特数 (σ):</label>
-            <input type="range" id="sigma" min="1" max="100" step="0.1" value="10">
-            <div class="value-display">当前值: <span id="sigma-value">10</span></div>
+            <input type="range" id="sigma" min="1" max="50" step="0.1" value="10">
+            <div class="value-display">
+                当前值: <span id="sigma-value">10</span>
+                <input type="number" id="sigma-input" class="param-input" min="1" max="50" step="0.1" value="10">
+            </div>
         </div>
         
         <div class="control-group">
             <label for="rho">瑞丽数 (ρ):</label>
-            <input type="range" id="rho" min="1" max="100" step="0.1" value="28">
-            <div class="value-display">当前值: <span id="rho-value">28</span></div>
+            <input type="range" id="rho" min="0" max="100" step="0.1" value="28">
+            <div class="value-display">
+                当前值: <span id="rho-value">28</span>
+                <input type="number" id="rho-input" class="param-input" min="0" max="100" step="0.1" value="28">
+            </div>
         </div>
         
         <div class="control-group">
             <label for="beta">方向比 (β):</label>
-            <input type="range" id="beta" min="0" max="10" step="0.1" value="2.666">
-            <div class="value-display">当前值: <span id="beta-value">2.666</span></div>
+            <input type="range" id="beta" min="1" max="10" step="0.001" value="2.667">
+            <div class="value-display">
+                当前值: <span id="beta-value">2.667</span>
+                <input type="number" id="beta-input" class="param-input" min="1" max="10" step="0.001" value="2.667">
+            </div>
         </div>
         
         <div class="control-group">
@@ -148,7 +170,7 @@
         <div class="button-group">
             <button id="reset">重置</button>
             <button id="reset-view">重置视角</button>
-            <button id="pause">暂停</button>
+            <button id="pause">开始</button>
             <button id="random">随机参数</button>
         </div>
     </div>
@@ -195,7 +217,7 @@
                 new THREE.Vector3(0, 0, 1)   // Z轴
             ];
             
-            // 创建坐标轴线和刻度
+            // 坐标轴线和刻度
             for (let i = 0; i < 3; i++) {
                 const lineGeometry = new THREE.BufferGeometry();
                 const lineMaterial = new THREE.LineBasicMaterial({ 
@@ -259,7 +281,7 @@
         // 洛伦兹吸引子线
         const lineGeometry = new THREE.BufferGeometry();
         let lineMaterial = new THREE.LineBasicMaterial({
-            color: 0xff0000,
+            color: 0xFFBB00,
             linewidth: 1
         });
         
@@ -268,7 +290,7 @@
         let rho = 28;
         let beta = 8/3;
         let speed = 1;
-        let isPaused = false;
+        let isPaused = true; // 初始状态为暂停，需要点击"开始"按钮才能开始模拟
         
         // 初始状态
         let x = 0.1;
@@ -309,19 +331,46 @@
             controlsPanel.style.cursor = 'move';
         });
         
+        // 参数更新函数
+        function updateParameter(name, value) {
+            const fixedValue = parseFloat(value);
+            const slider = document.getElementById(name);
+            const display = document.getElementById(`${name}-value`);
+            const input = document.getElementById(`${name}-input`);
+            
+            // 更新全局变量
+            window[name] = fixedValue;
+            
+            // 更新UI
+            slider.value = fixedValue;
+            display.textContent = fixedValue.toFixed(name === 'beta' ? 3 : 2);
+            input.value = fixedValue;
+        }
+
+        // 滑动条事件监听
         document.getElementById('sigma').addEventListener('input', function(e) {
-            sigma = parseFloat(e.target.value);
-            document.getElementById('sigma-value').textContent = sigma.toFixed(2);
+            updateParameter('sigma', e.target.value);
         });
         
         document.getElementById('rho').addEventListener('input', function(e) {
-            rho = parseFloat(e.target.value);
-            document.getElementById('rho-value').textContent = rho.toFixed(2);
+            updateParameter('rho', e.target.value);
         });
         
         document.getElementById('beta').addEventListener('input', function(e) {
-            beta = parseFloat(e.target.value);
-            document.getElementById('beta-value').textContent = beta.toFixed(3);
+            updateParameter('beta', e.target.value);
+        });
+
+        // 输入框事件监听
+        document.getElementById('sigma-input').addEventListener('change', function(e) {
+            updateParameter('sigma', e.target.value);
+        });
+        
+        document.getElementById('rho-input').addEventListener('change', function(e) {
+            updateParameter('rho', e.target.value);
+        });
+        
+        document.getElementById('beta-input').addEventListener('change', function(e) {
+            updateParameter('beta', e.target.value);
         });
         
         document.getElementById('speed').addEventListener('input', function(e) {
@@ -335,16 +384,23 @@
         });
         
         document.getElementById('reset').addEventListener('click', function() {
+            // 重置状态变量
             x = 0.1;
             y = 0;
             z = 0;
             
+            // 清空轨迹
             pointCount = 0;
             lineGeometry.setDrawRange(0, 0);
             lineGeometry.attributes.position.needsUpdate = true;
             
+            // 重置时间累积器
+            accumulatedTime = 0;
+            lastTime = performance.now();
+            
+            // 确保系统停止
             isPaused = true;
-            document.getElementById('pause').textContent = '继续';
+            document.getElementById('pause').textContent = '开始';  // 改为"开始"更符合逻辑
         });
         
         document.getElementById('reset-view').addEventListener('click', function() {
@@ -355,60 +411,83 @@
         
         document.getElementById('pause').addEventListener('click', function() {
             isPaused = !isPaused;
-            this.textContent = isPaused ? '继续' : '暂停';
+            
+            if (!isPaused) {
+                // 开始运动时重置时间累积器，避免瞬间更新
+                lastTime = performance.now();
+                accumulatedTime = 0;
+            }
+            
+            this.textContent = isPaused ? '开始' : '暂停';
         });
         
         document.getElementById('random').addEventListener('click', function() {
-            // 随机生成参数
-            sigma = Math.random() * 99 + 1;
-            rho = Math.random() * 99 + 1;
-            beta = Math.random() * 9 + 0.1;
+            // 随机生成参数，使用新的范围
+            const randomSigma = Math.random() * 49 + 1;     // 1-50
+            const randomRho = Math.random() * 100;          // 0-100
+            const randomBeta = Math.random() * 9 + 1;       // 1-10
             
-            document.getElementById('sigma').value = sigma;
-            document.getElementById('rho').value = rho;
-            document.getElementById('beta').value = beta;
-            
-            document.getElementById('sigma-value').textContent = sigma.toFixed(2);
-            document.getElementById('rho-value').textContent = rho.toFixed(2);
-            document.getElementById('beta-value').textContent = beta.toFixed(3);
+            // 使用更新函数更新所有参数
+            updateParameter('sigma', randomSigma);
+            updateParameter('rho', randomRho);
+            updateParameter('beta', randomBeta);
         });
         
-        // 洛伦兹方程
-        function lorenz(x, y, z, dt) {
-            const dx = sigma * (y - x) * dt;
-            const dy = (x * (rho - z) - y) * dt;
-            const dz = (x * y - beta * z) * dt;
-            return [dx, dy, dz];
+        // 固定的数值积分步长
+        const fixedStep = 0.01;
+        let accumulatedTime = 0;
+        let lastTime = performance.now();
+        
+        // 洛伦兹方程（纯数学关系）
+        function lorenz(x, y, z) {
+            return [
+                sigma * (y - x),
+                x * (rho - z) - y,
+                x * y - beta * z
+            ];
+        }
+        
+        // 更新系统状态
+        function updateSystem(dt) {
+            const [dx, dy, dz] = lorenz(x, y, z);
+            x += dx * dt;
+            y += dy * dt;
+            z += dz * dt;
+            
+            if (pointCount < maxPoints) {
+                positions[pointCount * 3] = x;
+                positions[pointCount * 3 + 1] = y;
+                positions[pointCount * 3 + 2] = z;
+                pointCount++;
+                lineGeometry.setDrawRange(0, pointCount);
+            } else {
+                for (let i = 0; i < (maxPoints - 1) * 3; i++) {
+                    positions[i] = positions[i + 3];
+                }
+                positions[(maxPoints - 1) * 3] = x;
+                positions[(maxPoints - 1) * 3 + 1] = y;
+                positions[(maxPoints - 1) * 3 + 2] = z;
+            }
+            
+            lineGeometry.attributes.position.needsUpdate = true;
         }
         
         function animate() {
             requestAnimationFrame(animate);
             
             if (!isPaused) {
-                // 计算洛伦兹吸引子
-                const dt = 0.01 * speed;
-                const [dx, dy, dz] = lorenz(x, y, z, dt);
+                const currentTime = performance.now();
+                const deltaTime = (currentTime - lastTime) / 1000; // 转换为秒
+                lastTime = currentTime;
                 
-                x += dx;
-                y += dy;
-                z += dz;
+                // 根据speed参数累积更多的时间
+                accumulatedTime += deltaTime * speed;
                 
-                if (pointCount < maxPoints) {
-                    positions[pointCount * 3] = x;
-                    positions[pointCount * 3 + 1] = y;
-                    positions[pointCount * 3 + 2] = z;
-                    pointCount++;
-                    lineGeometry.setDrawRange(0, pointCount);
-                } else {
-                    for (let i = 0; i < (maxPoints - 1) * 3; i++) {
-                        positions[i] = positions[i + 3];
-                    }
-                    positions[(maxPoints - 1) * 3] = x;
-                    positions[(maxPoints - 1) * 3 + 1] = y;
-                    positions[(maxPoints - 1) * 3 + 2] = z;
+                // 使用固定步长进行多次更新
+                while (accumulatedTime >= fixedStep) {
+                    updateSystem(fixedStep);
+                    accumulatedTime -= fixedStep;
                 }
-                
-                lineGeometry.attributes.position.needsUpdate = true;
             }
             
             controls.update();
