@@ -152,7 +152,62 @@
             align-items: center;
             justify-content: space-between;
         }
+        
+        /* 全局控制按钮样式 */
+        .global-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        
+        .global-btn {
+            padding: 8px 15px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .global-btn:hover {
+            background-color: #555;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .global-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.2);
+        }
+        
+        .global-btn.play-pause {
+            background-color: #4CAF50;
+        }
+        
+        .global-btn.play-pause:hover {
+            background-color: #45a049;
+        }
+        
+        .global-btn.reset {
+            background-color: #f44336;
+        }
+        
+        .global-btn.reset:hover {
+            background-color: #d32f2f;
+        }
     </style>
+    
+    <!-- 全局控制按钮 -->
+    <div class="global-controls">
+        <button id="global-reset" class="global-btn reset">全部重置</button>
+        <button id="global-play-pause" class="global-btn play-pause">全部开始</button>
+    </div>
 
     <!-- 控制面板1 -->
     <div id="controls-1" class="controls-panel">
@@ -443,6 +498,13 @@
                 this.line = new THREE.Line(this.lineGeometry, this.lineMaterial);
                 scene.add(this.line);
                 
+                // 创建曲线头部的小球
+                this.headGeometry = new THREE.SphereGeometry(0.3, 8, 8); // 3px的小球
+                this.headMaterial = new THREE.MeshBasicMaterial({ color: color });
+                this.head = new THREE.Mesh(this.headGeometry, this.headMaterial);
+                this.head.position.set(this.x, this.y, this.z);
+                scene.add(this.head);
+                
                 // 绑定事件处理程序
                 this.bindEvents();
             }
@@ -478,6 +540,9 @@
                     this.positions[(this.maxPoints - 1) * 3 + 2] = this.z;
                 }
                 
+                // 更新曲线头部小球的位置
+                this.head.position.set(this.x, this.y, this.z);
+                
                 this.lineGeometry.attributes.position.needsUpdate = true;
             }
             
@@ -502,6 +567,9 @@
                 this.x = 0.1;
                 this.y = 0;
                 this.z = 0;
+                
+                // 重置小球位置
+                this.head.position.set(this.x, this.y, this.z);
                 
                 this.pointCount = 0;
                 this.lineGeometry.setDrawRange(0, 0);
@@ -581,8 +649,11 @@
             // 清理资源
             dispose() {
                 scene.remove(this.line);
+                scene.remove(this.head);
                 this.lineGeometry.dispose();
                 this.lineMaterial.dispose();
+                this.headGeometry.dispose();
+                this.headMaterial.dispose();
             }
         }
         
@@ -740,12 +811,49 @@
             return axesGroup;
         }
 
+        // 初始化全局控制按钮
+        function initializeGlobalControls() {
+            const resetAllBtn = document.getElementById('global-reset');
+            const playPauseAllBtn = document.getElementById('global-play-pause');
+            let globalPaused = true; // 全局暂停状态
+            
+            // 全部重置按钮
+            resetAllBtn.addEventListener('click', () => {
+                lorenzSystems.forEach(system => {
+                    if (system) {
+                        system.reset();
+                    }
+                });
+            });
+            
+            // 全部开始/暂停按钮
+            playPauseAllBtn.addEventListener('click', () => {
+                globalPaused = !globalPaused;
+                playPauseAllBtn.textContent = globalPaused ? '全部开始' : '全部暂停';
+                
+                lorenzSystems.forEach(system => {
+                    if (system) {
+                        system.isPaused = globalPaused;
+                        if (!system.isPaused) {
+                            system.lastTime = performance.now();
+                            system.accumulatedTime = 0;
+                        }
+                        const pauseBtn = document.getElementById(`pause-${system.id}`);
+                        if (pauseBtn) {
+                            pauseBtn.textContent = system.isPaused ? '开始' : '暂停';
+                        }
+                    }
+                });
+            });
+        }
+        
         // 初始化函数
         function init() {
             scene.add(createInfiniteAxes());
             initializeCurves();
             initializePanelDrag();
             initializeViewReset();
+            initializeGlobalControls();
         }
 
         // 动画循环
