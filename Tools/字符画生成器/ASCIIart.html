@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII字符画生成器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        
+        .description {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #7f8c8d;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+        }
+        
+        .section-title {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            color: #2c3e50;
+        }
+        
+        /* 图片上传区域 */
+        .upload-section {
+            text-align: center;
+        }
+        
+        .file-input-wrapper {
+            margin-bottom: 20px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-input-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .file-input-label:hover {
+            background-color: #2980b9;
+        }
+        
+        .image-preview-container {
+            position: relative;
+            max-width: 100%;
+            height: 400px;
+            margin: 0 auto;
+            border: 2px dashed #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none; /* 防止图片被选中 */
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+            pointer-events: none; /* 防止图片接收鼠标事件 */
+        }
+        
+        /* 选区预览区域 */
+        .selection-preview-container {
+            position: relative;
+            max-width: 100%;
+            height: 200px;
+            margin: 20px auto 0;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #f9f9f9;
+        }
+        
+        .selection-preview {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+        }
+        
+        .selection-box {
+            position: absolute;
+            border: 2px dashed #3498db;
+            background-color: rgba(52, 152, 219, 0.2);
+            cursor: move;
+            display: none;
+        }
+        
+        .resize-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #3498db;
+            border-radius: 50%;
+            bottom: -5px;
+            right: -5px;
+            cursor: nwse-resize;
+        }
+        
+        /* 配置区域 */
+        .config-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .config-item {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .config-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .config-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .aspect-ratio {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .generate-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+        
+        .generate-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .generate-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        /* 结果区域 */
+        .result-section {
+            text-align: center;
+        }
+        
+        .ascii-result {
+            font-family: 'Courier New', monospace;
+            white-space: pre;
+            font-size: 10px;
+            line-height: 1;
+            text-align: left;
+            overflow: auto;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 500px;
+            display: inline-block;
+        }
+        
+        .controls {
+            margin-top: 15px;
+        }
+        
+        .control-btn {
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .control-btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ASCII字符画生成器</h1>
+        <p class="description">上传图片，选择区域，将其转换为ASCII字符画</p>
+        
+        <!-- 图片上传区域 -->
+        <div class="section upload-section">
+            <h2 class="section-title">1. 上传图片</h2>
+            <div class="file-input-wrapper">
+                <input type="file" id="imageInput" class="file-input" accept="image/*">
+                <label for="imageInput" class="file-input-label">选择图片</label>
+            </div>
+            <div class="image-preview-container" id="previewContainer">
+                <img id="imagePreview" class="image-preview">
+                <div id="selectionBox" class="selection-box">
+                    <div id="resizeHandle" class="resize-handle"></div>
+                </div>
+            </div>
+            <!-- 选区预览区域 -->
+            <div class="selection-preview-container">
+                <img id="selectionPreview" class="selection-preview">
+            </div>
+        </div>
+        
+        <!-- 配置区域 -->
+        <div class="section">
+            <h2 class="section-title">2. 生成配置</h2>
+            <div class="config-section">
+                <div class="config-item">
+                    <label class="config-label" for="contrastInput">对比度</label>
+                    <input type="range" id="contrastInput" class="config-input" min="0" max="200" value="100">
+                    <span id="contrastValue">100%</span>
+                </div>
+                <div class="config-item">
+                    <label class="config-label" for="widthInput">单行字符数</label>
+                    <input type="number" id="widthInput" class="config-input" min="10" max="200" value="80">
+                </div>
+                <div class="config-item">
+                    <label class="config-label" for="heightInput">列字符数</label>
+                    <input type="number" id="heightInput" class="config-input" min="10" max="200" value="40">
+                </div>
+            </div>
+            <div class="aspect-ratio" id="aspectRatio">字符画长宽比: 2:1</div>
+            <button id="generateBtn" class="generate-btn" disabled>生成ASCII字符画</button>
+        </div>
+        
+        <!-- 结果区域 -->
+        <div class="section result-section">
+            <h2 class="section-title">3. 生成效果</h2>
+            <pre id="asciiResult" class="ascii-result">ASCII字符画将在这里显示...</pre>
+            <div class="controls">
+                <button id="copyBtn" class="control-btn">复制到剪贴板</button>
+                <button id="downloadBtn" class="control-btn">下载为文本文件</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script>
+    // 全局变量
+    let imageLoaded = false;
+    let selectionActive = false;
+    let isDragging = false;
+    let isResizing = false;
+    let startX, startY, startWidth, startHeight;
+    let currentX, currentY, currentWidth, currentHeight;
+
+    // DOM元素
+    const imageInput = document.getElementById('imageInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewContainer = document.getElementById('previewContainer');
+    const selectionBox = document.getElementById('selectionBox');
+    const resizeHandle = document.getElementById('resizeHandle');
+    const selectionPreview = document.getElementById('selectionPreview');
+    const contrastInput = document.getElementById('contrastInput');
+    const contrastValue = document.getElementById('contrastValue');
+    const widthInput = document.getElementById('widthInput');
+    const heightInput = document.getElementById('heightInput');
+    const aspectRatio = document.getElementById('aspectRatio');
+    const generateBtn = document.getElementById('generateBtn');
+    const asciiResult = document.getElementById('asciiResult');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    // ASCII字符集，从暗到亮排序
+    const asciiChars = '@%#*+=-:. ';
+
+    // 事件监听器
+    imageInput.addEventListener('change', handleImageUpload);
+    contrastInput.addEventListener('input', updateContrastValue);
+    widthInput.addEventListener('input', updateAspectRatio);
+    heightInput.addEventListener('input', updateAspectRatio);
+    generateBtn.addEventListener('click', generateAsciiArt);
+    copyBtn.addEventListener('click', copyToClipboard);
+    downloadBtn.addEventListener('click', downloadAsText);
+
+    // 拖拽和调整大小事件
+    selectionBox.addEventListener('mousedown', startDrag);
+    resizeHandle.addEventListener('mousedown', startResize);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopDragResize);
+    
+    // 防止图片被选中
+    previewContainer.addEventListener('dragstart', (e) => e.preventDefault());
+    previewContainer.addEventListener('selectstart', (e) => e.preventDefault());
+
+    // 图片上传处理
+    function handleImageUpload(e) {
+        const file = e.target.files[0];
+        if (file && file.type.match('image.*')) {
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                imagePreview.src = event.target.result;
+                imagePreview.style.display = 'block';
+                imageLoaded = true;
+
+                // 图片加载完成后初始化选择框
+                imagePreview.onload = function () {
+                    initSelectionBox();
+                    updateSelectionPreview(); // 确保选区预览立即更新
+                    generateBtn.disabled = false;
+                };
+            };
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // 初始化选择框
+    function initSelectionBox() {
+        // 获取图片的实际显示尺寸
+        const imgWidth = imagePreview.clientWidth;
+        const imgHeight = imagePreview.clientHeight;
+
+        // 初始选择框大小为图片的80%
+        const boxWidth = imgWidth * 0.8;
+        const boxHeight = imgHeight * 0.8;
+
+        // 居中放置选择框
+        const boxLeft = (imgWidth - boxWidth) / 2;
+        const boxTop = (imgHeight - boxHeight) / 2;
+
+        // 设置选择框位置和大小
+        selectionBox.style.left = boxLeft + 'px';
+        selectionBox.style.top = boxTop + 'px';
+        selectionBox.style.width = boxWidth + 'px';
+        selectionBox.style.height = boxHeight + 'px';
+        selectionBox.style.display = 'block';
+
+        // 更新当前选择框的位置和大小
+        currentX = boxLeft;
+        currentY = boxTop;
+        currentWidth = boxWidth;
+        currentHeight = boxHeight;
+
+        // 更新长宽比
+        updateAspectRatio();
+        
+        // 更新选区预览
+        updateSelectionPreview();
+    }
+    
+    // 开始拖拽
+    function startDrag(e) {
+        // 阻止事件冒泡，避免与resize事件冲突
+        e.stopPropagation();
+        e.preventDefault();
+
+        if (e.target === resizeHandle) return;
+
+        const imgRect = imagePreview.getBoundingClientRect();
+        
+        isDragging = true;
+        // 计算鼠标相对于选择框的偏移
+        startX = e.clientX - imgRect.left - currentX;
+        startY = e.clientY - imgRect.top - currentY;
+    }
+
+    // 开始调整大小
+    function startResize(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        const imgRect = imagePreview.getBoundingClientRect();
+        
+        isResizing = true;
+        startX = e.clientX - imgRect.left;
+        startY = e.clientY - imgRect.top;
+        startWidth = currentWidth;
+        startHeight = currentHeight;
+    }
+
+    // 处理鼠标移动（拖拽和调整大小）
+    function handleMouseMove(e) {
+        if (!imageLoaded) return;
+
+        const imgRect = imagePreview.getBoundingClientRect();
+        
+        // 确保只在图片区域内操作
+        if (isDragging) {
+            // 计算新位置，相对于图片的位置
+            let newX = e.clientX - imgRect.left - startX;
+            let newY = e.clientY - imgRect.top - startY;
+
+            // 获取图片的实际显示尺寸
+            const imgWidth = imagePreview.clientWidth;
+            const imgHeight = imagePreview.clientHeight;
+
+            // 限制选择框不超出图片边界
+            newX = Math.max(0, Math.min(newX, imgWidth - currentWidth));
+            newY = Math.max(0, Math.min(newY, imgHeight - currentHeight));
+
+            // 更新选择框位置
+            selectionBox.style.left = newX + 'px';
+            selectionBox.style.top = newY + 'px';
+
+            // 更新当前位置
+            currentX = newX;
+            currentY = newY;
+            
+            // 实时更新选区预览
+            updateSelectionPreview();
+        }
+
+        if (isResizing) {
+            // 获取图片的实际显示尺寸
+            const imgWidth = imagePreview.clientWidth;
+            const imgHeight = imagePreview.clientHeight;
+            
+            // 计算新宽度和高度
+            let newWidth = startWidth + (e.clientX - imgRect.left - startX);
+            let newHeight = startHeight + (e.clientY - imgRect.top - startY);
+
+            // 限制最小尺寸
+            newWidth = Math.max(50, newWidth);
+            newHeight = Math.max(50, newHeight);
+
+            // 限制不超出图片边界
+            newWidth = Math.min(newWidth, imgWidth - currentX);
+            newHeight = Math.min(newHeight, imgHeight - currentY);
+
+            // 更新选择框大小
+            selectionBox.style.width = newWidth + 'px';
+            selectionBox.style.height = newHeight + 'px';
+
+            // 更新当前大小
+            currentWidth = newWidth;
+            currentHeight = newHeight;
+
+            // 更新长宽比显示
+            updateAspectRatio();
+            
+            // 实时更新选区预览
+            updateSelectionPreview();
+        }
+    }
+
+    // 停止拖拽和调整大小
+    function stopDragResize() {
+        if (isDragging || isResizing) {
+            isDragging = false;
+            isResizing = false;
+            
+            // 更新选区预览
+            updateSelectionPreview();
+        }
+    }
+    
+    // 更新选区预览
+    function updateSelectionPreview() {
+        if (!imageLoaded) return;
+        
+        // 创建一个临时canvas
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 设置canvas大小为选择框大小
+        canvas.width = currentWidth;
+        canvas.height = currentHeight;
+        
+        try {
+            // 直接从图片上截取选择框区域
+            ctx.drawImage(
+                imagePreview,
+                currentX, currentY, currentWidth, currentHeight,
+                0, 0, canvas.width, canvas.height
+            );
+            
+            // 更新预览图片
+            selectionPreview.src = canvas.toDataURL();
+            selectionPreview.style.display = 'block';
+        } catch (error) {
+            console.error("选区预览更新失败:", error);
+        }
+    }
+
+    // 更新对比度值显示
+    function updateContrastValue() {
+        const value = contrastInput.value;
+        contrastValue.textContent = value + '%';
+    }
+
+    // 更新长宽比显示
+    function updateAspectRatio() {
+        const width = parseInt(widthInput.value);
+        const height = parseInt(heightInput.value);
+
+        // 计算最大公约数
+        const gcd = (a, b) => b ? gcd(b, a % b) : a;
+        const divisor = gcd(width, height);
+
+        // 显示简化后的长宽比
+        const ratioWidth = width / divisor;
+        const ratioHeight = height / divisor;
+        aspectRatio.textContent = `字符画长宽比: ${ratioWidth}:${ratioHeight}`;
+    }
+
+    // 生成ASCII字符画
+    function generateAsciiArt() {
+        if (!imageLoaded || !selectionPreview.src) return;
+
+        // 禁用生成按钮
+        generateBtn.disabled = true;
+        generateBtn.textContent = '生成中...';
+
+        // 使用setTimeout让UI有时间更新
+        setTimeout(() => {
+            // 创建一个离屏canvas来处理图像
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 获取配置参数
+            const outputWidth = parseInt(widthInput.value);
+            const outputHeight = parseInt(heightInput.value);
+            const contrast = parseInt(contrastInput.value) / 100;
+            
+            // 设置canvas大小为输出字符数
+            canvas.width = outputWidth;
+            canvas.height = outputHeight;
+            
+            // 在canvas上绘制选区预览图片
+            ctx.drawImage(
+                selectionPreview,
+                0, 0, selectionPreview.naturalWidth, selectionPreview.naturalHeight,
+                0, 0, canvas.width, canvas.height
+            );
+
+            // 应用对比度
+            if (contrast !== 1) {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    // 计算灰度值
+                    const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+
+                    // 应用对比度
+                    const factor = (259 * (contrast * 255 + 255)) / (255 * (259 - contrast * 255));
+                    const adjustedGray = factor * (gray - 128) + 128;
+
+                    // 更新RGB值
+                    data[i] = adjustedGray;     // R
+                    data[i + 1] = adjustedGray; // G
+                    data[i + 2] = adjustedGray; // B
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+            }
+
+            // 生成ASCII字符画
+            let asciiArt = '';
+
+            // 遍历每个像素并转换为ASCII字符
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    // 获取像素数据
+                    const pixelData = ctx.getImageData(x, y, 1, 1).data;
+
+                    // 计算灰度值 (0-255)
+                    const grayValue = 0.299 * pixelData[0] + 0.587 * pixelData[1] + 0.114 * pixelData[2];
+
+                    // 将灰度值映射到ASCII字符集的索引
+                    const charIndex = Math.floor((grayValue / 255) * (asciiChars.length - 1));
+
+                    // 添加对应的ASCII字符
+                    asciiArt += asciiChars[charIndex];
+                }
+                // 添加换行符
+                asciiArt += '\n';
+            }
+
+            // 显示结果
+            asciiResult.textContent = asciiArt;
+
+            // 恢复生成按钮
+            generateBtn.disabled = false;
+            generateBtn.textContent = '生成ASCII字符画';
+
+            // 滚动到结果区域
+            asciiResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    }
+
+    // 复制到剪贴板
+    function copyToClipboard() {
+        const text = asciiResult.textContent;
+
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    alert('已复制到剪贴板！');
+                })
+                .catch(err => {
+                    console.error('复制失败:', err);
+                    fallbackCopy();
+                });
+        } else {
+            fallbackCopy();
+        }
+
+        // 兼容性处理
+        function fallbackCopy() {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    alert('已复制到剪贴板！');
+                } else {
+                    console.error('复制失败');
+                }
+            } catch (err) {
+                console.error('复制失败:', err);
+            }
+
+            document.body.removeChild(textArea);
+        }
+    }
+
+    // 下载为文本文件
+    function downloadAsText() {
+        const text = asciiResult.textContent;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ascii_art.txt';
+        document.body.appendChild(a);
+        a.click();
+
+        // 清理
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+    }
+
+    // 初始化
+    updateContrastValue();
+    updateAspectRatio();
+</script>
+</html>
