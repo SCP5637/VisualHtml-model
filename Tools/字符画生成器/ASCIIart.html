@@ -192,19 +192,41 @@
             text-align: center;
         }
         
+        .ascii-result-container {
+            width: 100%;
+            max-height: 800px;
+            margin: 0 auto;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: auto;
+            position: relative;
+        }
+        
         .ascii-result {
             font-family: 'Courier New', monospace;
             white-space: pre;
-            font-size: 10px;
             line-height: 1;
             text-align: left;
-            overflow: auto;
-            background-color: #f9f9f9;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            max-height: 2000px;
-            display: inline-block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .font-size-control {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .font-size-slider {
+            width: 200px;
         }
         
         .controls {
@@ -273,7 +295,14 @@
         <!-- 结果区域 -->
         <div class="section result-section">
             <h2 class="section-title">3. 生成效果</h2>
-            <pre id="asciiResult" class="ascii-result">ASCII字符画将在这里显示...</pre>
+            <div class="font-size-control">
+                <span>字体大小:</span>
+                <input type="range" id="fontSizeSlider" class="font-size-slider" min="1" max="20" value="10">
+                <span id="fontSizeValue">10px</span>
+            </div>
+            <div class="ascii-result-container" id="asciiResultContainer">
+                <pre id="asciiResult" class="ascii-result">ASCII字符画将在这里显示...</pre>
+            </div>
             <div class="controls">
                 <button id="copyBtn" class="control-btn">复制到剪贴板</button>
                 <button id="downloadBtn" class="control-btn">下载为文本文件</button>
@@ -301,6 +330,9 @@
     const aspectRatio = document.getElementById('aspectRatio');
     const generateBtn = document.getElementById('generateBtn');
     const asciiResult = document.getElementById('asciiResult');
+    const asciiResultContainer = document.getElementById('asciiResultContainer');
+    const fontSizeSlider = document.getElementById('fontSizeSlider');
+    const fontSizeValue = document.getElementById('fontSizeValue');
     const copyBtn = document.getElementById('copyBtn');
     const downloadBtn = document.getElementById('downloadBtn');
 
@@ -313,6 +345,7 @@
     widthInput.addEventListener('input', updateAspectRatio);
     heightInput.addEventListener('input', updateAspectRatio);
     generateBtn.addEventListener('click', generateAsciiArt);
+    fontSizeSlider.addEventListener('input', updateFontSize);
     copyBtn.addEventListener('click', copyToClipboard);
     downloadBtn.addEventListener('click', downloadAsText);
 
@@ -499,12 +532,15 @@
             // 显示结果
             asciiResult.textContent = asciiArt;
 
+            // 应用当前字体大小并调整位置
+            updateFontSize();
+
             // 恢复生成按钮
             generateBtn.disabled = false;
             generateBtn.textContent = '生成ASCII字符画';
 
             // 滚动到结果区域
-            asciiResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            asciiResultContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
     }
 
@@ -570,15 +606,53 @@
         }, 100);
     }
 
+    // 更新字体大小
+    function updateFontSize() {
+        const fontSize = fontSizeSlider.value;
+        fontSizeValue.textContent = fontSize + 'px';
+        asciiResult.style.fontSize = fontSize + 'px';
+        
+        // 调整ASCII字符画在容器中的位置
+        adjustAsciiArtPosition();
+    }
+    
+    // 调整ASCII字符画在容器中的位置
+    function adjustAsciiArtPosition() {
+        // 如果没有生成ASCII字符画，则不需要调整
+        if (asciiResult.textContent === 'ASCII字符画将在这里显示...') return;
+        
+        // 确保ASCII字符画在容器中居中显示
+        const containerWidth = asciiResultContainer.clientWidth;
+        const containerHeight = asciiResultContainer.clientHeight;
+        
+        // 获取ASCII字符画的实际尺寸
+        const asciiWidth = asciiResult.scrollWidth;
+        const asciiHeight = asciiResult.scrollHeight;
+        
+        // 如果ASCII字符画比容器小，则居中显示
+        if (asciiWidth < containerWidth && asciiHeight < containerHeight) {
+            asciiResult.style.transform = 'translate(-50%, -50%)';
+            asciiResult.style.top = '50%';
+            asciiResult.style.left = '50%';
+        } else {
+            // 如果ASCII字符画比容器大，则调整位置使其可以滚动查看
+            asciiResult.style.transform = 'none';
+            asciiResult.style.top = '0';
+            asciiResult.style.left = '0';
+        }
+    }
+    
     // 初始化
     updateContrastValue();
     updateAspectRatio();
+    updateFontSize();
     
     // 添加窗口调整大小事件，确保Cropper正确响应
     window.addEventListener('resize', function() {
         if (cropper) {
             cropper.resize();
         }
+        adjustAsciiArtPosition();
     });
 </script>
 </html>
