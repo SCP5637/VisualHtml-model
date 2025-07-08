@@ -194,6 +194,7 @@
         
         .ascii-result-container {
             width: 100%;
+            min-height: 400px;
             max-height: 800px;
             margin: 0 auto;
             background-color: #f9f9f9;
@@ -425,7 +426,7 @@
     // 更新长宽比显示
     function updateAspectRatio() {
         const width = parseInt(widthInput.value);
-        const height = parseInt(heightInput.value);
+        const height = parseInt(heightInput.value) * 2;
 
         // 计算最大公约数
         const gcd = (a, b) => b ? gcd(b, a % b) : a;
