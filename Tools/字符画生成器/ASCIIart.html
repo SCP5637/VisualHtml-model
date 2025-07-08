@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASCII字符画生成器</title>
+    <!-- 引入Cropper.js的CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
         * {
             box-sizing: border-box;
@@ -87,18 +89,14 @@
             height: 400px;
             margin: 0 auto;
             border: 2px dashed #ddd;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             overflow: hidden;
-            user-select: none; /* 防止图片被选中 */
+            background-color: #f9f9f9;
         }
         
         .image-preview {
+            display: block;
             max-width: 100%;
             max-height: 100%;
-            display: none;
-            pointer-events: none; /* 防止图片接收鼠标事件 */
         }
         
         /* 选区预览区域 */
@@ -121,23 +119,18 @@
             display: none;
         }
         
-        .selection-box {
-            position: absolute;
-            border: 2px dashed #3498db;
-            background-color: rgba(52, 152, 219, 0.2);
-            cursor: move;
-            display: none;
+        /* Cropper.js自定义样式 */
+        .cropper-container {
+            margin: 0 auto;
         }
         
-        .resize-handle {
-            position: absolute;
-            width: 10px;
-            height: 10px;
+        .cropper-view-box {
+            outline: 1px solid #3498db;
+            outline-color: rgba(52, 152, 219, 0.75);
+        }
+        
+        .cropper-point {
             background-color: #3498db;
-            border-radius: 50%;
-            bottom: -5px;
-            right: -5px;
-            cursor: nwse-resize;
         }
         
         /* 配置区域 */
@@ -210,7 +203,7 @@
             padding: 20px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            max-height: 500px;
+            max-height: 2000px;
             display: inline-block;
         }
         
@@ -248,9 +241,6 @@
             </div>
             <div class="image-preview-container" id="previewContainer">
                 <img id="imagePreview" class="image-preview">
-                <div id="selectionBox" class="selection-box">
-                    <div id="resizeHandle" class="resize-handle"></div>
-                </div>
             </div>
             <!-- 选区预览区域 -->
             <div class="selection-preview-container">
@@ -290,23 +280,19 @@
             </div>
         </div>
     </div>
+    <!-- 引入Cropper.js的JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 </body>
 
 <script>
     // 全局变量
     let imageLoaded = false;
-    let selectionActive = false;
-    let isDragging = false;
-    let isResizing = false;
-    let startX, startY, startWidth, startHeight;
-    let currentX, currentY, currentWidth, currentHeight;
+    let cropper;
 
     // DOM元素
     const imageInput = document.getElementById('imageInput');
     const imagePreview = document.getElementById('imagePreview');
     const previewContainer = document.getElementById('previewContainer');
-    const selectionBox = document.getElementById('selectionBox');
-    const resizeHandle = document.getElementById('resizeHandle');
     const selectionPreview = document.getElementById('selectionPreview');
     const contrastInput = document.getElementById('contrastInput');
     const contrastValue = document.getElementById('contrastValue');
@@ -330,16 +316,6 @@
     copyBtn.addEventListener('click', copyToClipboard);
     downloadBtn.addEventListener('click', downloadAsText);
 
-    // 拖拽和调整大小事件
-    selectionBox.addEventListener('mousedown', startDrag);
-    resizeHandle.addEventListener('mousedown', startResize);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', stopDragResize);
-    
-    // 防止图片被选中
-    previewContainer.addEventListener('dragstart', (e) => e.preventDefault());
-    previewContainer.addEventListener('selectstart', (e) => e.preventDefault());
-
     // 图片上传处理
     function handleImageUpload(e) {
         const file = e.target.files[0];
@@ -349,183 +325,59 @@
             reader.onload = function (event) {
                 imagePreview.src = event.target.result;
                 imagePreview.style.display = 'block';
-                imageLoaded = true;
-
-                // 图片加载完成后初始化选择框
+                
+                // 图片加载完成后初始化Cropper
                 imagePreview.onload = function () {
-                    initSelectionBox();
-                    updateSelectionPreview(); // 确保选区预览立即更新
-                    generateBtn.disabled = false;
+                    // 如果已经存在cropper实例，则销毁它
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    
+                    // 初始化Cropper
+                    cropper = new Cropper(imagePreview, {
+                        viewMode: 1, // 限制裁剪框不超出图片的画布
+                        dragMode: 'move', // 拖动模式为移动图片
+                        aspectRatio: NaN, // 不限制裁剪框的宽高比
+                        autoCropArea: 0.8, // 初始裁剪框大小为图片的80%
+                        restore: false, // 调整窗口大小后不恢复裁剪区域
+                        guides: true, // 显示裁剪框上的虚线
+                        center: true, // 显示裁剪框中心的指示器
+                        highlight: false, // 不显示裁剪框内的白色蒙版
+                        cropBoxMovable: true, // 允许移动裁剪框
+                        cropBoxResizable: true, // 允许调整裁剪框大小
+                        toggleDragModeOnDblclick: false, // 禁用双击切换拖动模式
+                        minCropBoxWidth: 50, // 最小裁剪框宽度
+                        minCropBoxHeight: 50, // 最小裁剪框高度
+                        ready: function() {
+                            // Cropper准备好后更新预览
+                            updateSelectionPreview();
+                            imageLoaded = true;
+                            generateBtn.disabled = false;
+                        },
+                        crop: function() {
+                            // 裁剪区域变化时更新预览
+                            updateSelectionPreview();
+                        }
+                    });
                 };
             };
 
             reader.readAsDataURL(file);
         }
     }
-
-    // 初始化选择框
-    function initSelectionBox() {
-        // 获取图片的实际显示尺寸
-        const imgWidth = imagePreview.clientWidth;
-        const imgHeight = imagePreview.clientHeight;
-
-        // 初始选择框大小为图片的80%
-        const boxWidth = imgWidth * 0.8;
-        const boxHeight = imgHeight * 0.8;
-
-        // 居中放置选择框
-        const boxLeft = (imgWidth - boxWidth) / 2;
-        const boxTop = (imgHeight - boxHeight) / 2;
-
-        // 设置选择框位置和大小
-        selectionBox.style.left = boxLeft + 'px';
-        selectionBox.style.top = boxTop + 'px';
-        selectionBox.style.width = boxWidth + 'px';
-        selectionBox.style.height = boxHeight + 'px';
-        selectionBox.style.display = 'block';
-
-        // 更新当前选择框的位置和大小
-        currentX = boxLeft;
-        currentY = boxTop;
-        currentWidth = boxWidth;
-        currentHeight = boxHeight;
-
-        // 更新长宽比
-        updateAspectRatio();
-        
-        // 更新选区预览
-        updateSelectionPreview();
-    }
-    
-    // 开始拖拽
-    function startDrag(e) {
-        // 阻止事件冒泡，避免与resize事件冲突
-        e.stopPropagation();
-        e.preventDefault();
-
-        if (e.target === resizeHandle) return;
-
-        const imgRect = imagePreview.getBoundingClientRect();
-        
-        isDragging = true;
-        // 计算鼠标相对于选择框的偏移
-        startX = e.clientX - imgRect.left - currentX;
-        startY = e.clientY - imgRect.top - currentY;
-    }
-
-    // 开始调整大小
-    function startResize(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        
-        const imgRect = imagePreview.getBoundingClientRect();
-        
-        isResizing = true;
-        startX = e.clientX - imgRect.left;
-        startY = e.clientY - imgRect.top;
-        startWidth = currentWidth;
-        startHeight = currentHeight;
-    }
-
-    // 处理鼠标移动（拖拽和调整大小）
-    function handleMouseMove(e) {
-        if (!imageLoaded) return;
-
-        const imgRect = imagePreview.getBoundingClientRect();
-        
-        // 确保只在图片区域内操作
-        if (isDragging) {
-            // 计算新位置，相对于图片的位置
-            let newX = e.clientX - imgRect.left - startX;
-            let newY = e.clientY - imgRect.top - startY;
-
-            // 获取图片的实际显示尺寸
-            const imgWidth = imagePreview.clientWidth;
-            const imgHeight = imagePreview.clientHeight;
-
-            // 限制选择框不超出图片边界
-            newX = Math.max(0, Math.min(newX, imgWidth - currentWidth));
-            newY = Math.max(0, Math.min(newY, imgHeight - currentHeight));
-
-            // 更新选择框位置
-            selectionBox.style.left = newX + 'px';
-            selectionBox.style.top = newY + 'px';
-
-            // 更新当前位置
-            currentX = newX;
-            currentY = newY;
-            
-            // 实时更新选区预览
-            updateSelectionPreview();
-        }
-
-        if (isResizing) {
-            // 获取图片的实际显示尺寸
-            const imgWidth = imagePreview.clientWidth;
-            const imgHeight = imagePreview.clientHeight;
-            
-            // 计算新宽度和高度
-            let newWidth = startWidth + (e.clientX - imgRect.left - startX);
-            let newHeight = startHeight + (e.clientY - imgRect.top - startY);
-
-            // 限制最小尺寸
-            newWidth = Math.max(50, newWidth);
-            newHeight = Math.max(50, newHeight);
-
-            // 限制不超出图片边界
-            newWidth = Math.min(newWidth, imgWidth - currentX);
-            newHeight = Math.min(newHeight, imgHeight - currentY);
-
-            // 更新选择框大小
-            selectionBox.style.width = newWidth + 'px';
-            selectionBox.style.height = newHeight + 'px';
-
-            // 更新当前大小
-            currentWidth = newWidth;
-            currentHeight = newHeight;
-
-            // 更新长宽比显示
-            updateAspectRatio();
-            
-            // 实时更新选区预览
-            updateSelectionPreview();
-        }
-    }
-
-    // 停止拖拽和调整大小
-    function stopDragResize() {
-        if (isDragging || isResizing) {
-            isDragging = false;
-            isResizing = false;
-            
-            // 更新选区预览
-            updateSelectionPreview();
-        }
-    }
     
     // 更新选区预览
     function updateSelectionPreview() {
-        if (!imageLoaded) return;
-        
-        // 创建一个临时canvas
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // 设置canvas大小为选择框大小
-        canvas.width = currentWidth;
-        canvas.height = currentHeight;
+        if (!cropper) return;
         
         try {
-            // 直接从图片上截取选择框区域
-            ctx.drawImage(
-                imagePreview,
-                currentX, currentY, currentWidth, currentHeight,
-                0, 0, canvas.width, canvas.height
-            );
-            
-            // 更新预览图片
-            selectionPreview.src = canvas.toDataURL();
-            selectionPreview.style.display = 'block';
+            // 获取裁剪的Canvas数据
+            const canvas = cropper.getCroppedCanvas();
+            if (canvas) {
+                // 更新预览图片
+                selectionPreview.src = canvas.toDataURL();
+                selectionPreview.style.display = 'block';
+            }
         } catch (error) {
             console.error("选区预览更新失败:", error);
         }
@@ -550,11 +402,20 @@
         const ratioWidth = width / divisor;
         const ratioHeight = height / divisor;
         aspectRatio.textContent = `字符画长宽比: ${ratioWidth}:${ratioHeight}`;
+        
+        // 如果cropper存在，可以选择更新裁剪框的宽高比
+        // 注意：这里我们不更新裁剪框的宽高比，保持自由调整
+        // 如果需要同步，可以取消下面的注释
+        /*
+        if (cropper) {
+            cropper.setAspectRatio(width / height);
+        }
+        */
     }
 
     // 生成ASCII字符画
     function generateAsciiArt() {
-        if (!imageLoaded || !selectionPreview.src) return;
+        if (!imageLoaded || !cropper) return;
 
         // 禁用生成按钮
         generateBtn.disabled = true;
@@ -562,6 +423,15 @@
 
         // 使用setTimeout让UI有时间更新
         setTimeout(() => {
+            // 获取裁剪的Canvas数据
+            const croppedCanvas = cropper.getCroppedCanvas();
+            if (!croppedCanvas) {
+                console.error("无法获取裁剪的Canvas");
+                generateBtn.disabled = false;
+                generateBtn.textContent = '生成ASCII字符画';
+                return;
+            }
+            
             // 创建一个离屏canvas来处理图像
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -575,10 +445,10 @@
             canvas.width = outputWidth;
             canvas.height = outputHeight;
             
-            // 在canvas上绘制选区预览图片
+            // 在canvas上绘制裁剪后的图像
             ctx.drawImage(
-                selectionPreview,
-                0, 0, selectionPreview.naturalWidth, selectionPreview.naturalHeight,
+                croppedCanvas,
+                0, 0, croppedCanvas.width, croppedCanvas.height,
                 0, 0, canvas.width, canvas.height
             );
 
@@ -703,5 +573,12 @@
     // 初始化
     updateContrastValue();
     updateAspectRatio();
+    
+    // 添加窗口调整大小事件，确保Cropper正确响应
+    window.addEventListener('resize', function() {
+        if (cropper) {
+            cropper.resize();
+        }
+    });
 </script>
 </html>
